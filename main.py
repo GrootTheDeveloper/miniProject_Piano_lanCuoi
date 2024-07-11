@@ -20,25 +20,44 @@ note_files = {f"{note}": f"{i}.mp3" for i, note in enumerate(
 # Tải và lưu trữ các âm thanh
 sounds = {note: pygame.mixer.Sound(audio_path + file) for note, file in note_files.items()}
 
-# Số lượng kênh âm thanh cố định
-num_channels = 8
-channels = [pygame.mixer.Channel(i) for i in range(num_channels)]
+# Thiết lập số lượng kênh âm thanh
+num_channels = 16
+pygame.mixer.set_num_channels(num_channels)
 
-# Hàm phát một nốt nhạc trên kênh riêng biệt
-def play_note(note, channel_index):
+
+# Hàm phát một nốt nhạc
+def play_note(note):
     sound = sounds.get(note)
     if sound:
-        channels[channel_index].play(sound)
+        channel = pygame.mixer.find_channel()
+        if channel:
+            channel.play(sound)
 
-def play_song(song, delays):
-    start_time = time.time() * 1000
+
+# Hàm phát một hợp âm
+def play_chord(chord):
+    for note in chord:
+        play_note(note)
+
+
+# Hàm phát một bài hát
+def play_song(song, delays, chords, lyrics):
+    start_time = time.time() * 1000  # Chuyển giờ hiện tại sang milliseconds
     next_play_time = start_time
 
-    for i, (note, delay) in enumerate(zip(song, delays)):
-        next_play_time += delay
+    for i, note in enumerate(song):
+        next_play_time += delays[i]
         while time.time() * 1000 < next_play_time:
-            time.sleep(0.01)
-        play_note(note, i % num_channels)
+            time.sleep(0.01)  # Ngủ trong một khoảng thời gian ngắn để không tải CPU
+
+        play_note(note)
+
+        # Nếu có hợp âm tương ứng, phát hợp âm đó
+        if chords[i] is not None:
+            play_chord(chords[i])
+
+        # In ra nốt nhạc, hợp âm (nếu có) và lời bài hát tương ứng
+        print(f"{lyrics[i]}", end=" ")
 
 song = ["G4", "A4", "G4", "E5", "C5", "D5", "E5", "D5", "C5", "C5", "D5", "E5", "D5", "C5",
         "A4", "G4", "E5", "D5", "C5", "D5", "G4", "A4", "C5", "A4", "E5", "D5", "D5", "E5", "D5", "C5",
@@ -50,4 +69,18 @@ delays = [350, 350, 350, 350, 1400, 250, 350, 350, 350, 1400, 250, 350, 350, 350
           1700, 350, 350, 350, 700, 1050, 350, 350, 350, 700, 700, 700,
           700, 350, 350, 350, 350, 350, 700, 1050, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350]
 
-play_song(song, delays)
+chords = [None, None, None, ["C4", "E4", "G4"], None, ["E4", "G#4", "B4", "D5"], None, None, ["A3", "C4", "E4"],
+          None, ["C4", "E4", "G4", "Bb4"], None, None, None, ["F3", "A3", "C4"], None, None, ["D3", "F#3", "A3"],
+          None, ["G3", "C4", "D4"], None, ["G3", "B3", "D4", "F4"], None, None, ["C4", "E4", "G4"], None,
+          ["E4", "G#4", "B4", "D5"], None, ["A3", "C4", "E4"], ["C4", "E4", "G4", "Bb4"], None, None, ["F3", "A3", "C4"],
+          None, ["D3", "F#3", "A3"], None, ["G3", "C4", "D4"], None, ["G3", "B3", "D4", "F4"], None, ["D3", "F3", "A3"],
+          None, None, ["E3", "G3", "B3"], None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+lyrics = [" Nhìn", "quanh", "lần", "cuối...\n", "Rừng", "thay", "lá", "ngậm", "ngùi...\n", "Rừng", "không",
+          "báo", "tin", "vui", "gì,", "chỉ", "cố", "che", "màn", "mưa...\n", "Lặng",
+          "im", "như","", "lá...\n", "Em", "không", "nói", "một", "lời,", "không", "khóc",
+          "không", "cười", "chỉ", "cuốn", "theo", "chiều", "gió", "đưa...\n", "Dễ", "như",
+          "nuốt", "thật", "nhanh", "ngụm", "cà", "phê", "cuối...\n", "dễ", "như", "cách",
+          "em", "xua", "bàn", "tay", "để", "che", "tiếc", "nuối...\n", "Dễ", "như..."]
+
+# Phát bài hát
+play_song(song, delays, chords, lyrics)
